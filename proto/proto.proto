@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+
+package proto; 
+
+service OrdenService {
+  rpc replyToOrder(sendToOrden) returns (replyFromOrden);
+}
+
+message sendToOrden {
+  string idPaquete = 1;
+  string tipo = 2;
+  string nombre = 3;
+  int64 valor = 4;
+  string origen = 5;
+  string destino = 6;
+}
+
+message replyFromOrden {
+  string seguimiento = 1;
+}
