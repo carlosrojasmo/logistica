@@ -93,5 +93,5 @@ var _OrdenService_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto.proto",
+	Metadata: "proto/proto.proto",
 }

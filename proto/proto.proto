@@ -17,5 +17,5 @@ message sendToOrden {
 }
 
 message replyFromOrden {
-  string seguimiento = 1;
+  int64 seguimiento = 1;
 }

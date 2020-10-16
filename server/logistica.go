@@ -2,8 +2,20 @@ package main
 import (
 	"time"
 	"math/rand"
+	"log"
+	"net"
+	"google.golang.org/grpc"
+	pb "../proto"
 )
-var id=0
+const (
+	port = ":50051"
+)
+
+var colaRetail=[]paquete{}
+var colaPrioritario=[]paquete{}
+var colaNormal=[]paquete{}
+var registro=[]orden{}
+
 type orden struct {
 	timestamp time.Time
 	idPaquete string
@@ -38,6 +50,23 @@ func newPaquete(idPaquete string, tipo string, valor int) *paquete{
 	paqueteNuevo.estado="en bodega"
 	return &paqueteNuevo
 }
-func main(){
+
+func recibir(mensaje orden){
+	nuevaOrden :=newOrden(mensaje.tipo,mensaje.nombre,mensaje.valor,mensaje.origen,mensaje.destino,mensaje.idPaquete)
+	//Aqui enviar nuevaOrden.seguimiento a cliente()
+	nuevoPaquete := newPaquete(mensaje.idPaquete,mensaje.tipo,mensaje.valor)
+	if nuevoPaquete.tipo=="retail"{
+		colaRetail=append(colaRetail,*nuevoPaquete)
+	} else if nuevoPaquete.tipo=="normal"{
+		colaNormal=append(colaNormal,*nuevoPaquete)
+	} else{
+		colaPrioritario=append(colaPrioritario, *nuevoPaquete)
+	}
+	registro=append(registro,*nuevaOrden)
+}
+func enviar_colas(){
 	
+}
+func main() { 
+
 }
