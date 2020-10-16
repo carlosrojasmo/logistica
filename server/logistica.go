@@ -1,8 +1,7 @@
 package main
 import (
-	"fmt"
 	"time"
-	"reflect"
+	"math/rand"
 )
 var id=0
 type orden struct {
@@ -13,32 +12,32 @@ type orden struct {
 	valor int
 	origen string
 	destino string
-	seguimiento string
+	seguimiento int
 }
-func newOrden(tipo string,nombre string,valor int,origen string, destino string) *orden{
-	ordenNueva := orden{nombre: nombre,tipo: tipo,valor: valor ,origen: origen, destino: destino}
+func newOrden(tipo string,nombre string,valor int,origen string, destino string,id string) *orden{
+	ordenNueva := orden{nombre: nombre,tipo: tipo,valor: valor ,origen: origen,idPaquete: id, destino: destino}
+	random := rand.NewSource(time.Now().UnixNano())
+	ordenNueva.seguimiento=(rand.New(random)).Intn(492829)
 	ordenNueva.timestamp= time.Now()
-	id:=id+1
-	ordenNueva.idPaquete = fmt.Sprint(id)
-	ordenNueva.seguimiento=fmt.Sprint(id*407)
 	return &ordenNueva
 }
 type paquete struct {
 	idPaquete string
 	tipo string
 	valor int
-	seguimiento string
+	seguimiento int
 	intentos int
 	estado string
 }
 
-func newPaquete(idPaquete string, tipo string, valor int, seguimiento string) *paquete{
-	paqueteNuevo := paquete{idPaquete: idPaquete, tipo: tipo,valor: valor,seguimiento: seguimiento}
+func newPaquete(idPaquete string, tipo string, valor int) *paquete{
+	paqueteNuevo := paquete{idPaquete: idPaquete, tipo: tipo,valor: valor}
+	random := rand.NewSource(time.Now().UnixNano())
+	paqueteNuevo.seguimiento=(rand.New(random)).Intn(492829)
 	paqueteNuevo.intentos= 0;
 	paqueteNuevo.estado="en bodega"
 	return &paqueteNuevo
 }
 func main(){
-	t:= time.Now()
-	fmt.Println(reflect.TypeOf(t))
+	
 }
