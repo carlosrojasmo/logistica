@@ -30,8 +30,7 @@ func newOrden(tipo string,nombre string,valor int,origen string, destino string,
 	ordenNueva := orden{nombre: nombre,tipo: tipo,valor: valor ,origen: origen,idPaquete: id, destino: destino}
 	random := rand.NewSource(time.Now().UnixNano())
 	ordenNueva.seguimiento=(rand.New(random)).Intn(492829)
-	if registro[ordenNueva.seguimiento]
-	ordenNueva.timestamp= time.Now()
+	ordenNueva.timestamp=time.Now()
 	return &ordenNueva
 }
 type paquete struct {
