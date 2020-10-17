@@ -18,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OrdenServiceClient interface {
 	ReplyToOrder(ctx context.Context, in *SendToOrden, opts ...grpc.CallOption) (*ReplyFromOrden, error)
+	GetState(ctx context.Context, in *ReplyFromOrden, opts ...grpc.CallOption) (*InfoSeguimiento, error)
 }
 
 type ordenServiceClient struct {
@@ -37,11 +38,21 @@ func (c *ordenServiceClient) ReplyToOrder(ctx context.Context, in *SendToOrden, 
 	return out, nil
 }
 
+func (c *ordenServiceClient) GetState(ctx context.Context, in *ReplyFromOrden, opts ...grpc.CallOption) (*InfoSeguimiento, error) {
+	out := new(InfoSeguimiento)
+	err := c.cc.Invoke(ctx, "/proto.OrdenService/getState", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrdenServiceServer is the server API for OrdenService service.
 // All implementations must embed UnimplementedOrdenServiceServer
 // for forward compatibility
 type OrdenServiceServer interface {
 	ReplyToOrder(context.Context, *SendToOrden) (*ReplyFromOrden, error)
+	GetState(context.Context, *ReplyFromOrden) (*InfoSeguimiento, error)
 	mustEmbedUnimplementedOrdenServiceServer()
 }
 
@@ -51,6 +62,9 @@ type UnimplementedOrdenServiceServer struct {
 
 func (UnimplementedOrdenServiceServer) ReplyToOrder(context.Context, *SendToOrden) (*ReplyFromOrden, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReplyToOrder not implemented")
+}
+func (UnimplementedOrdenServiceServer) GetState(context.Context, *ReplyFromOrden) (*InfoSeguimiento, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetState not implemented")
 }
 func (UnimplementedOrdenServiceServer) mustEmbedUnimplementedOrdenServiceServer() {}
 
@@ -83,6 +97,24 @@ func _OrdenService_ReplyToOrder_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrdenService_GetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplyFromOrden)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdenServiceServer).GetState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.OrdenService/GetState",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdenServiceServer).GetState(ctx, req.(*ReplyFromOrden))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _OrdenService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.OrdenService",
 	HandlerType: (*OrdenServiceServer)(nil),
@@ -90,6 +122,10 @@ var _OrdenService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "replyToOrder",
 			Handler:    _OrdenService_ReplyToOrder_Handler,
+		},
+		{
+			MethodName: "getState",
+			Handler:    _OrdenService_GetState_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

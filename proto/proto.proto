@@ -3,8 +3,11 @@ syntax = "proto3";
 
 package proto; 
 
+
+
 service OrdenService {
   rpc replyToOrder(sendToOrden) returns (replyFromOrden);
+  rpc getState(replyFromOrden) returns (infoSeguimiento);
 }
 
 message sendToOrden {
@@ -18,4 +21,8 @@ message sendToOrden {
 
 message replyFromOrden {
   int64 seguimiento = 1;
+}
+
+message infoSeguimiento {
+  string estado = 1;
 }
