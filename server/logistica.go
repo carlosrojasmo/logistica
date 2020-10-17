@@ -14,7 +14,7 @@ const (
 var colaRetail=[]paquete{}
 var colaPrioritario=[]paquete{}
 var colaNormal=[]paquete{}
-var registro=[]orden{}
+var registro map[int]orden
 
 type orden struct {
 	timestamp time.Time
@@ -30,6 +30,7 @@ func newOrden(tipo string,nombre string,valor int,origen string, destino string,
 	ordenNueva := orden{nombre: nombre,tipo: tipo,valor: valor ,origen: origen,idPaquete: id, destino: destino}
 	random := rand.NewSource(time.Now().UnixNano())
 	ordenNueva.seguimiento=(rand.New(random)).Intn(492829)
+	if registro[ordenNueva.seguimiento]
 	ordenNueva.timestamp= time.Now()
 	return &ordenNueva
 }
@@ -50,6 +51,9 @@ func newPaquete(idPaquete string, tipo string, valor int) *paquete{
 	paqueteNuevo.estado="en bodega"
 	return &paqueteNuevo
 }
+func buscarPaquete(seguimiento int) orden{
+	return registro[seguimiento]
+}
 
 func recibir(mensaje orden){
 	nuevaOrden :=newOrden(mensaje.tipo,mensaje.nombre,mensaje.valor,mensaje.origen,mensaje.destino,mensaje.idPaquete)
@@ -62,9 +66,10 @@ func recibir(mensaje orden){
 	} else{
 		colaPrioritario=append(colaPrioritario, *nuevoPaquete)
 	}
-	registro=append(registro,*nuevaOrden)
+	registro[nuevaOrden.seguimiento]= *nuevaOrden
 }
-func enviar_colas(){
+
+func enviarColas(){
 	
 }
 func main() { 
