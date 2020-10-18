@@ -131,6 +131,8 @@ func (s* server)ReplyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.Re
 }
 func (s* server)GetState(ctx context.Context, seguimiento *pb.ReplyFromOrden) (*pb.InfoSeguimiento, error){
 	paq:=buscarPaquete(int(seguimiento.Seguimiento))
+	fmt.Println(seguimiento.Seguimiento)
+	fmt.Println(paq)
 	estado:=pb.InfoSeguimiento{Estado:paq.estado}
 
 	return &estado,nil
