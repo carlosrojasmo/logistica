@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"log"
 	"net"
+	"context"
 	"google.golang.org/grpc"
 	pb "../proto"
 )
@@ -15,6 +16,10 @@ var colaRetail=[]paquete{}
 var colaPrioritario=[]paquete{}
 var colaNormal=[]paquete{}
 var registro map[int]orden
+
+type server struct {
+	pb.UnimplementedOrdenServiceServer
+}
 
 type orden struct {
 	timestamp time.Time
@@ -54,7 +59,7 @@ func buscarPaquete(seguimiento int) orden{
 	return registro[seguimiento]
 }
 
-func recibir(mensaje orden){
+func recibir(mensaje orden) orden{
 	nuevaOrden :=newOrden(mensaje.tipo,mensaje.nombre,mensaje.valor,mensaje.origen,mensaje.destino,mensaje.idPaquete)
 	//Aqui enviar nuevaOrden.seguimiento a cliente()
 	nuevoPaquete := newPaquete(mensaje.idPaquete,mensaje.tipo,mensaje.valor)
@@ -66,11 +71,30 @@ func recibir(mensaje orden){
 		colaPrioritario=append(colaPrioritario, *nuevoPaquete)
 	}
 	registro[nuevaOrden.seguimiento]= *nuevaOrden
+	return *nuevaOrden
 }
 
 func enviarColas(){
 	
 }
-func main() { 
 
+func (s* server)replyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.ReplyFromOrden,error){
+	orden := *newOrden(pedido.Tipo,pedido.Nombre,int(pedido.Valor),pedido.Origen,pedido.Destino,pedido.IdPaquete)
+	orden=recibir(orden)
+	seguimiento := pb.ReplyFromOrden{Seguimiento:int64(orden.seguimiento)}
+	return &seguimiento,nil
 }
+
+
+func main() { 
+	lis, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	s := grpc.NewServer()
+	pb.RegisterOrdenServiceServer(s, &server{})
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+}
+
