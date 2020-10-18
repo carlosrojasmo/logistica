@@ -78,7 +78,7 @@ func enviarColas(){
 	
 }
 
-func (s* server)replyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.ReplyFromOrden,error){
+func (s* server)ReplyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.ReplyFromOrden,error){
 	orden := *newOrden(pedido.Tipo,pedido.Nombre,int(pedido.Valor),pedido.Origen,pedido.Destino,pedido.IdPaquete)
 	orden=recibir(orden)
 	seguimiento := pb.ReplyFromOrden{Seguimiento:int64(orden.seguimiento)}
