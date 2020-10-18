@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+
+package proto; 
+
+service CamionDelivery {
+  rpc getPack(askForPack) returns (sendPack);
+  rpc report(reportDelivery) returns (reportOk);
+}
+
+message askForPack {
+  string tipo = 1;
+}
+
+message sendPack {
+  string idPaquete = 1;
+  string tipo = 2;
+  string nombre = 3;
+  int64 valor = 4;
+  string origen = 5;
+  string destino = 6;
+}
+
+message reportDelivery {
+  string idPaquete = 1;
+  bool entregado = 2;
+  int64 intentos = 3;
+}
+
+message reportOk {
+	string ok = 1;
+}

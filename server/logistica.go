@@ -11,15 +11,20 @@ import (
 )
 const (
 	port = ":50051"
+	port2 = ":50054"
 )
-
+var paqueteAux=newPaquete("400","null",1) 
 var colaRetail=[]paquete{}
 var colaPrioritario=[]paquete{}
 var colaNormal=[]paquete{}
 var registro= make(map[int]orden)
 var registroPaquete= make (map[int]paquete)
+
 type server struct {
 	pb.UnimplementedOrdenServiceServer
+}
+type serverDos struct {
+	pb.UnimplementedCamionDeliveryServer
 }
 
 type orden struct {
@@ -76,8 +81,46 @@ func recibir(mensaje orden) orden{
 	return nuevaOrden
 }
 
-func enviarColas(){
+func enviarColas(tipo string) paquete{
+	var paquetePedido paquete
+	if tipo=="retail"{
+		if len(colaRetail)==0{
+			if len (colaPrioritario)==0{
+				paquetePedido=paqueteAux
+			}else{
+				 paquetePedido = colaPrioritario[0]
+				colaPrioritario=colaPrioritario[1:]
+			}
+		}else{
+			 paquetePedido =colaRetail[0]
+			colaRetail=colaRetail[1:]
+		}
+	}else{
+		if len(colaPrioritario)==0{
+			if len(colaNormal)==0{
+				paquetePedido= paqueteAux
+			}else{
+				 paquetePedido =colaNormal[0]
+				colaNormal=colaNormal[1:]
+			}
+		}else{
+			paquetePedido =colaPrioritario[0]
+			colaPrioritario=colaPrioritario[1:]
+		}
+	}
 	
+	return paquetePedido
+}
+
+func recibirReporte(idPaquete string,entregado bool,intentos int64) string{
+	for seguimiento,paquete:=range registroPaquete{
+		if paquete.idPaquete==idPaquete{
+			paquete.estado="No entregado"
+			paquete.intentos=int(intentos)
+			registroPaquete[seguimiento]=paquete
+		}
+	}
+	return "ok"
 }
 
 func (s* server)ReplyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.ReplyFromOrden,error){
@@ -93,6 +136,23 @@ func (s* server)GetState(ctx context.Context, seguimiento *pb.ReplyFromOrden) (*
 	return &estado,nil
 }
 
+func (s* server)GetPack(ctx context.Context, pedido *pb.AskForPack) (*pb.SendPack, error){
+	tipo := pedido.Tipo
+	paqueteEncontrado := enviarColas(tipo)
+	ordenPaquete:= registro[paqueteEncontrado.seguimiento]
+	paqueteEnviado := pb.SendPack{IdPaquete: ordenPaquete.idPaquete,Tipo:ordenPaquete.tipo,Nombre:ordenPaquete.nombre,Valor:int64(ordenPaquete.valor),Origen:ordenPaquete.origen,Destino:ordenPaquete.destino}
+	return  &paqueteEnviado,nil
+}
+
+func (s* server)Report(ctx context.Context, reporte *pb.ReportDelivery,) (*pb.ReportOk, error){
+	idPaquete:= reporte.IdPaquete
+	entregado:= reporte.Entregado
+	intentos:= reporte.Intentos
+	resultado := recibirReporte(idPaquete,entregado,intentos)
+	reporteok:= pb.ReportOk{Ok: resultado}
+	return &reporteok,nil
+}
+
 func main() { 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
@@ -102,6 +162,17 @@ func main() {
 	pb.RegisterOrdenServiceServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
+	}
+
+	
+	lis2, err2 := net.Listen("tcp", port2)
+	if err2 != nil {
+		log.Fatalf("failed to listen: %v", err2)
+	}
+	s2 := grpc.NewServer()
+	pb.RegisterCamionDeliveryServer(s2, &serverDos{})
+	if err2 := s2.Serve(lis2); err2 != nil {
+		log.Fatalf("failed to serve: %v", err2)
 	}
 }
 
