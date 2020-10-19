@@ -118,7 +118,7 @@ func enviarColas(tipo string) paquete{
 }
 
 func finanza(paquete paquete){
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial("amqp://logistica:logistica@10.10.28.102:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 	ch, err := conn.Channel()
