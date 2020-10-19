@@ -14,7 +14,7 @@ import (
 const (
 	port = ":50051"
 )
-var paqueteAux=newPaquete("400","null",1) 
+var paqueteAux=newPaquete("400","null",1,999999999) 
 var colaRetail=[]paquete{}
 var colaPrioritario=[]paquete{}
 var colaNormal=[]paquete{}
@@ -54,10 +54,9 @@ type paquete struct {
 	Estado string
 }
 
-func newPaquete(idPaquete string, tipo string, valor int) paquete{
+func newPaquete(idPaquete string, tipo string, valor int,seguimiento int) paquete{
 	paqueteNuevo := paquete{IDPaquete: idPaquete, Tipo: tipo,Valor: valor}
-	random := rand.NewSource(time.Now().UnixNano())
-	paqueteNuevo.Seguimiento=(rand.New(random)).Intn(492829)
+	paqueteNuevo.Seguimiento=seguimiento
 	paqueteNuevo.Intentos= 0;
 	paqueteNuevo.Estado="En bodega"
 	return paqueteNuevo
@@ -68,7 +67,7 @@ func buscarPaquete(seguimiento int) paquete{
 
 func recibir(mensaje orden) orden{
 	nuevaOrden :=newOrden(mensaje.tipo,mensaje.nombre,mensaje.valor,mensaje.origen,mensaje.destino,mensaje.idPaquete)
-	nuevoPaquete := newPaquete(mensaje.idPaquete,mensaje.tipo,mensaje.valor)
+	nuevoPaquete := newPaquete(mensaje.idPaquete,mensaje.tipo,mensaje.valor,nuevaOrden.seguimiento)
 	fmt.Println("Nueva Orden: ",nuevaOrden)
 	fmt.Println("Nuevo Paquete: ",nuevoPaquete)
 	registroPaquete[nuevoPaquete.Seguimiento]=nuevoPaquete
