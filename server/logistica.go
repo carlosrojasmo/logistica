@@ -8,10 +8,11 @@ import (
 	"google.golang.org/grpc"
 	pb "../proto"
 	"fmt"
+	"github.com/streadway/amqp"
+	"encoding/json"
 )
 const (
 	port = ":50051"
-	port2 = ":50054"
 )
 var paqueteAux=newPaquete("400","null",1) 
 var colaRetail=[]paquete{}
@@ -67,7 +68,6 @@ func buscarPaquete(seguimiento int) paquete{
 
 func recibir(mensaje orden) orden{
 	nuevaOrden :=newOrden(mensaje.tipo,mensaje.nombre,mensaje.valor,mensaje.origen,mensaje.destino,mensaje.idPaquete)
-	fmt.Println(nuevaOrden)
 	nuevoPaquete := newPaquete(mensaje.idPaquete,mensaje.tipo,mensaje.valor)
 	registroPaquete[nuevoPaquete.seguimiento]=nuevoPaquete
 	if nuevoPaquete.tipo=="retail"{
@@ -82,6 +82,7 @@ func recibir(mensaje orden) orden{
 }
 
 func enviarColas(tipo string) paquete{
+
 	var paquetePedido paquete
 	if tipo=="retail"{
 		if len(colaRetail)==0{
@@ -112,18 +113,58 @@ func enviarColas(tipo string) paquete{
 	return paquetePedido
 }
 
+func finanza(paquete paquete){
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+	q, err := ch.QueueDeclare(
+		"hello", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	  )
+	  failOnError(err, "Failed to declare a queue")
+	  pedido,err:=json.Marshal(paquete)
+	  body := string(pedido)
+	  err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing {
+		  ContentType: "text/plain",
+		  Body:        []byte(body),
+		})
+	  failOnError(err, "Failed to publish a message")
+}
+
 func recibirReporte(idPaquete string,entregado bool,intentos int64) string{
+	var paqueteReal paquete
 	for seguimiento,paquete:=range registroPaquete{
 		if paquete.idPaquete==idPaquete{
-			paquete.estado="No entregado"
+			if entregado==true{
+				paquete.estado="Recibido"
+			}else{
+				paquete.estado="No Recibido"
+			}
 			paquete.intentos=int(intentos)
 			registroPaquete[seguimiento]=paquete
+			paqueteReal=paquete
 		}
+		
 	}
+	finanza(paqueteReal)
 	return "ok"
 }
 
 func (s* server)ReplyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.ReplyFromOrden,error){
+	fmt.Println(registro)
+	fmt.Println(registroPaquete)
 	orden := newOrden(pedido.Tipo,pedido.Nombre,int(pedido.Valor),pedido.Origen,pedido.Destino,pedido.IdPaquete)
 	orden=recibir(orden)
 	seguimiento := pb.ReplyFromOrden{Seguimiento:int64(orden.seguimiento)}
@@ -131,8 +172,6 @@ func (s* server)ReplyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.Re
 }
 func (s* server)GetState(ctx context.Context, seguimiento *pb.ReplyFromOrden) (*pb.InfoSeguimiento, error){
 	paq:=buscarPaquete(int(seguimiento.Seguimiento))
-	fmt.Println(seguimiento.Seguimiento)
-	fmt.Println(paq)
 	estado:=pb.InfoSeguimiento{Estado:paq.estado}
 
 	return &estado,nil
@@ -155,6 +194,12 @@ func (s* server)Report(ctx context.Context, reporte *pb.ReportDelivery,) (*pb.Re
 	return &reporteok,nil
 }
 
+func failOnError(err error, msg string) {
+	if err != nil {
+	  log.Fatalf("%s: %s", msg, err)
+	}
+  }
+
 func main() { 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
@@ -166,15 +211,6 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 
-	
-	/*lis2, err2 := net.Listen("tcp", port2)
-	if err2 != nil {
-		log.Fatalf("failed to listen: %v", err2)
-	}
-	s2 := grpc.NewServer()
-	pb.RegisterCamionDeliveryServer(s2, &serverDos{})
-	if err2 := s2.Serve(lis2); err2 != nil {
-		log.Fatalf("failed to serve: %v", err2)
-	}*/
 }
+
 
