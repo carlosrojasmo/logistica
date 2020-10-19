@@ -46,20 +46,20 @@ func newOrden(tipo string,nombre string,valor int,origen string, destino string,
 	return ordenNueva
 }
 type paquete struct {
-	idPaquete string
-	tipo string
-	valor int
-	seguimiento int
-	intentos int
-	estado string
+	IDPaquete string
+	Tipo string
+	Valor int
+	Seguimiento int
+	Intentos int
+	Estado string
 }
 
 func newPaquete(idPaquete string, tipo string, valor int) paquete{
-	paqueteNuevo := paquete{idPaquete: idPaquete, tipo: tipo,valor: valor}
+	paqueteNuevo := paquete{IDPaquete: idPaquete, Tipo: tipo,Valor: valor}
 	random := rand.NewSource(time.Now().UnixNano())
-	paqueteNuevo.seguimiento=(rand.New(random)).Intn(492829)
-	paqueteNuevo.intentos= 0;
-	paqueteNuevo.estado="Recibido"
+	paqueteNuevo.Seguimiento=(rand.New(random)).Intn(492829)
+	paqueteNuevo.Intentos= 0;
+	paqueteNuevo.Estado="En bodega"
 	return paqueteNuevo
 }
 func buscarPaquete(seguimiento int) paquete{
@@ -69,10 +69,12 @@ func buscarPaquete(seguimiento int) paquete{
 func recibir(mensaje orden) orden{
 	nuevaOrden :=newOrden(mensaje.tipo,mensaje.nombre,mensaje.valor,mensaje.origen,mensaje.destino,mensaje.idPaquete)
 	nuevoPaquete := newPaquete(mensaje.idPaquete,mensaje.tipo,mensaje.valor)
-	registroPaquete[nuevoPaquete.seguimiento]=nuevoPaquete
-	if nuevoPaquete.tipo=="retail"{
+	fmt.Println("Nueva Orden: ",nuevaOrden)
+	fmt.Println("Nuevo Paquete: ",nuevoPaquete)
+	registroPaquete[nuevoPaquete.Seguimiento]=nuevoPaquete
+	if nuevoPaquete.Tipo=="retail"{
 		colaRetail=append(colaRetail,nuevoPaquete)
-	} else if nuevoPaquete.tipo=="normal"{
+	} else if nuevoPaquete.Tipo=="normal"{
 		colaNormal=append(colaNormal,nuevoPaquete)
 	} else{
 		colaPrioritario=append(colaPrioritario, nuevoPaquete)
@@ -109,7 +111,9 @@ func enviarColas(tipo string) paquete{
 			colaPrioritario=colaPrioritario[1:]
 		}
 	}
-	
+	paqueteEdit:=registroPaquete[paquetePedido.Seguimiento]
+	paqueteEdit.Estado="En camino"
+	registroPaquete[paquetePedido.Seguimiento]=paqueteEdit
 	return paquetePedido
 }
 
@@ -146,26 +150,23 @@ func finanza(paquete paquete){
 func recibirReporte(idPaquete string,entregado bool,intentos int64) string{
 	var paqueteReal paquete
 	for seguimiento,paquete:=range registroPaquete{
-		if paquete.idPaquete==idPaquete{
+		if paquete.IDPaquete==idPaquete{
 			if entregado==true{
-				paquete.estado="Recibido"
+				paquete.Estado="Recibido"
 			}else{
-				paquete.estado="No Recibido"
+				paquete.Estado="No Recibido"
 			}
-			paquete.intentos=int(intentos)
+			paquete.Intentos=int(intentos)
 			registroPaquete[seguimiento]=paquete
 			paqueteReal=paquete
 		}
 		
 	}
-	fmt.Println(paqueteReal)
-	//finanza(paqueteReal)
+	finanza(paqueteReal)
 	return "ok"
 }
 
 func (s* server)ReplyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.ReplyFromOrden,error){
-	fmt.Println(registro)
-	fmt.Println(registroPaquete)
 	orden := newOrden(pedido.Tipo,pedido.Nombre,int(pedido.Valor),pedido.Origen,pedido.Destino,pedido.IdPaquete)
 	orden=recibir(orden)
 	seguimiento := pb.ReplyFromOrden{Seguimiento:int64(orden.seguimiento)}
@@ -173,7 +174,7 @@ func (s* server)ReplyToOrder(ctx context.Context,pedido *pb.SendToOrden) (*pb.Re
 }
 func (s* server)GetState(ctx context.Context, seguimiento *pb.ReplyFromOrden) (*pb.InfoSeguimiento, error){
 	paq:=buscarPaquete(int(seguimiento.Seguimiento))
-	estado:=pb.InfoSeguimiento{Estado:paq.estado}
+	estado:=pb.InfoSeguimiento{Estado:paq.Estado}
 
 	return &estado,nil
 }
@@ -181,11 +182,8 @@ func (s* server)GetState(ctx context.Context, seguimiento *pb.ReplyFromOrden) (*
 func (s* server)GetPack(ctx context.Context, pedido *pb.AskForPack) (*pb.SendPack, error){
 	tipo := pedido.Tipo
 	paqueteEncontrado := enviarColas(tipo)
-	ordenPaquete:= registro[paqueteEncontrado.seguimiento]
+	ordenPaquete:= registro[paqueteEncontrado.Seguimiento]
 	paqueteEnviado := pb.SendPack{IdPaquete: ordenPaquete.idPaquete,Tipo:ordenPaquete.tipo,Nombre:ordenPaquete.nombre,Valor:int64(ordenPaquete.valor),Origen:ordenPaquete.origen,Destino:ordenPaquete.destino}
-	fmt.Println(colaPrioritario)
-	fmt.Println(colaNormal)
-	fmt.Println(colaRetail)
 	return  &paqueteEnviado,nil
 }
 
