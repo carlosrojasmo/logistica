@@ -23,9 +23,9 @@ var registroPaquete= make (map[int]paquete)
 type server struct {
 	pb.UnimplementedOrdenServiceServer
 }
-type serverDos struct {
+/*type serverDos struct {
 	pb.UnimplementedCamionDeliveryServer
-}
+}*/
 
 type orden struct {
 	timestamp time.Time
@@ -167,7 +167,7 @@ func main() {
 	}
 
 	
-	lis2, err2 := net.Listen("tcp", port2)
+	/*lis2, err2 := net.Listen("tcp", port2)
 	if err2 != nil {
 		log.Fatalf("failed to listen: %v", err2)
 	}
@@ -175,6 +175,6 @@ func main() {
 	pb.RegisterCamionDeliveryServer(s2, &serverDos{})
 	if err2 := s2.Serve(lis2); err2 != nil {
 		log.Fatalf("failed to serve: %v", err2)
-	}
+	}*/
 }
 

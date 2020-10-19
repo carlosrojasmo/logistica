@@ -19,6 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 type OrdenServiceClient interface {
 	ReplyToOrder(ctx context.Context, in *SendToOrden, opts ...grpc.CallOption) (*ReplyFromOrden, error)
 	GetState(ctx context.Context, in *ReplyFromOrden, opts ...grpc.CallOption) (*InfoSeguimiento, error)
+	GetPack(ctx context.Context, in *AskForPack, opts ...grpc.CallOption) (*SendPack, error)
+	Report(ctx context.Context, in *ReportDelivery, opts ...grpc.CallOption) (*ReportOk, error)
 }
 
 type ordenServiceClient struct {
@@ -47,12 +49,32 @@ func (c *ordenServiceClient) GetState(ctx context.Context, in *ReplyFromOrden, o
 	return out, nil
 }
 
+func (c *ordenServiceClient) GetPack(ctx context.Context, in *AskForPack, opts ...grpc.CallOption) (*SendPack, error) {
+	out := new(SendPack)
+	err := c.cc.Invoke(ctx, "/proto.OrdenService/getPack", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordenServiceClient) Report(ctx context.Context, in *ReportDelivery, opts ...grpc.CallOption) (*ReportOk, error) {
+	out := new(ReportOk)
+	err := c.cc.Invoke(ctx, "/proto.OrdenService/report", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrdenServiceServer is the server API for OrdenService service.
 // All implementations must embed UnimplementedOrdenServiceServer
 // for forward compatibility
 type OrdenServiceServer interface {
 	ReplyToOrder(context.Context, *SendToOrden) (*ReplyFromOrden, error)
 	GetState(context.Context, *ReplyFromOrden) (*InfoSeguimiento, error)
+	GetPack(context.Context, *AskForPack) (*SendPack, error)
+	Report(context.Context, *ReportDelivery) (*ReportOk, error)
 	mustEmbedUnimplementedOrdenServiceServer()
 }
 
@@ -65,6 +87,12 @@ func (UnimplementedOrdenServiceServer) ReplyToOrder(context.Context, *SendToOrde
 }
 func (UnimplementedOrdenServiceServer) GetState(context.Context, *ReplyFromOrden) (*InfoSeguimiento, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetState not implemented")
+}
+func (UnimplementedOrdenServiceServer) GetPack(context.Context, *AskForPack) (*SendPack, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPack not implemented")
+}
+func (UnimplementedOrdenServiceServer) Report(context.Context, *ReportDelivery) (*ReportOk, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Report not implemented")
 }
 func (UnimplementedOrdenServiceServer) mustEmbedUnimplementedOrdenServiceServer() {}
 
@@ -115,6 +143,42 @@ func _OrdenService_GetState_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrdenService_GetPack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AskForPack)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdenServiceServer).GetPack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.OrdenService/GetPack",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdenServiceServer).GetPack(ctx, req.(*AskForPack))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrdenService_Report_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportDelivery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdenServiceServer).Report(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.OrdenService/Report",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdenServiceServer).Report(ctx, req.(*ReportDelivery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _OrdenService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.OrdenService",
 	HandlerType: (*OrdenServiceServer)(nil),
@@ -126,6 +190,14 @@ var _OrdenService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getState",
 			Handler:    _OrdenService_GetState_Handler,
+		},
+		{
+			MethodName: "getPack",
+			Handler:    _OrdenService_GetPack_Handler,
+		},
+		{
+			MethodName: "report",
+			Handler:    _OrdenService_Report_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
