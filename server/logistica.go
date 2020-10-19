@@ -158,7 +158,8 @@ func recibirReporte(idPaquete string,entregado bool,intentos int64) string{
 		}
 		
 	}
-	finanza(paqueteReal)
+	fmt.Println(paqueteReal)
+	//finanza(paqueteReal)
 	return "ok"
 }
 
@@ -182,6 +183,9 @@ func (s* server)GetPack(ctx context.Context, pedido *pb.AskForPack) (*pb.SendPac
 	paqueteEncontrado := enviarColas(tipo)
 	ordenPaquete:= registro[paqueteEncontrado.seguimiento]
 	paqueteEnviado := pb.SendPack{IdPaquete: ordenPaquete.idPaquete,Tipo:ordenPaquete.tipo,Nombre:ordenPaquete.nombre,Valor:int64(ordenPaquete.valor),Origen:ordenPaquete.origen,Destino:ordenPaquete.destino}
+	fmt.Println(colaPrioritario)
+	fmt.Println(colaNormal)
+	fmt.Println(colaRetail)
 	return  &paqueteEnviado,nil
 }
 
